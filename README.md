@@ -1,4 +1,4 @@
-Pokémon Showdown
+Pokémon Meltdown
 ========================================================================
 
 Navigation: [Website][1] | **Server repository** | [Client repository][2] | [Dex repository][3]
@@ -23,6 +23,21 @@ You can use your own computer as a server, but for other people to connect to yo
 
   [4]: http://pokemonshowdown.com/
   [5]: http://en.wikipedia.org/wiki/Port_forwarding
+
+
+Changes
+------------------------------------------------------------------------
+
+This fork contains the following changes:
+
+### Whitelist
+
+The server can be configured to grant access only to those contained in the whitelist. To enable it, change the config option (in config/config.js) `whitelistEnabled` to true. After that, the administrators can add/remove/view user Ids to/from the whitelist by using the commands:
++ `/whitelist [username]` - Whitelists the user, granting access to the server.
++ `/unwhitelist [username]` - Removes the specific username from the whitelist.
++ `/displaywhitelist` - Displays a list of the whitelisted userIds.
+
+*Note: Administrators are not affected by the whitelist.*
 
 
 Installing
