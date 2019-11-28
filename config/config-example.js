@@ -611,3 +611,5 @@ exports.grouplist = [
 		punishgroup: 'MUTE',
 	},
 ];
+
+exports.whitelistEnabled = false;
