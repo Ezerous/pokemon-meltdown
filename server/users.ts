@@ -874,6 +874,14 @@ export class User extends Chat.MessageContext {
 	}
 
 	handleRename(name: string, userid: ID, newlyRegistered: boolean, userType: string) {
+		if (Config.whitelistEnabled && userType === '1') {
+			this.popup(`Sorry, registered users only :(`);
+			return false;
+		}
+		if (!Whitelist.isWhitelisted(userid)) {
+			this.popup(`Sorry, you are not whitelisted :(`);
+			return false;
+		}
 		const conflictUser = users.get(userid);
 		if (conflictUser && !conflictUser.registered && conflictUser.connected) {
 			if (newlyRegistered && userType !== '1') {
@@ -1333,6 +1341,12 @@ export class User extends Chat.MessageContext {
 		return (prevNames.length ? prevNames[prevNames.length - 1] : this.id) as ID;
 	}
 	async tryJoinRoom(roomid: RoomID | Room, connection: Connection) {
+		if (Config.whitelistEnabled && !(connection.user && connection.user.registered)) {
+			return false;
+		}
+		if (!Whitelist.isWhitelisted(this.id)) {
+			return false;
+		}
 		roomid = roomid && (roomid as Room).roomid ? (roomid as Room).roomid : roomid as RoomID;
 		const room = Rooms.search(roomid);
 		if (!room && roomid.startsWith('view-')) {
@@ -1564,8 +1578,8 @@ export class User extends Chat.MessageContext {
 	getAccountStatusString() {
 		return this.trusted === this.id ? `[trusted]`
 			: this.autoconfirmed === this.id ? `[ac]`
-			: this.registered ? `[registered]`
-			: ``;
+				: this.registered ? `[registered]`
+					: ``;
 	}
 	destroy() {
 		// deallocate user
@@ -1604,7 +1618,7 @@ function pruneInactive(threshold: number) {
 		const bypass = user.statusType !== 'online' ||
 			(!user.can('bypassall') &&
 				(user.can('bypassafktimer') ||
-				Array.from(user.inRooms).some(room => user.can('bypassafktimer', null, Rooms.get(room) as BasicChatRoom))));
+					Array.from(user.inRooms).some(room => user.can('bypassafktimer', null, Rooms.get(room) as BasicChatRoom))));
 		if (!bypass && !user.connections.some(connection => now - connection.lastActiveTime < awayTimer)) {
 			user.setStatusType('idle');
 		}
@@ -1723,8 +1737,8 @@ function socketReceive(worker: Worker, workerid: number, socketid: string, messa
 	const lines = message.split('\n');
 	if (!lines[lines.length - 1]) lines.pop();
 	if (lines.length > (user.isStaff ||
-		(room.auth && room.auth[user.id] && room.auth[user.id] !== '+') ? THROTTLE_MULTILINE_WARN_STAFF
-			: THROTTLE_MULTILINE_WARN)) {
+	(room.auth && room.auth[user.id] && room.auth[user.id] !== '+') ? THROTTLE_MULTILINE_WARN_STAFF
+		: THROTTLE_MULTILINE_WARN)) {
 		connection.popup(`You're sending too many lines at once. Try using a paste service like [[Pastebin]].`);
 		return;
 	}

@@ -1504,7 +1504,7 @@ exports.commands = {
 		}
 		const includesUrl = reason.includes(`.${Config.routes.root}/`); // lgtm [js/incomplete-url-substring-sanitization]
 		if (!room.battle && !includesUrl && cmd !== 'forcebattleban') {
-			 return this.errorReply(`Battle bans require a battle replay if used outside of a battle; if the battle has expired, use /forcebattleban.`);
+			return this.errorReply(`Battle bans require a battle replay if used outside of a battle; if the battle has expired, use /forcebattleban.`);
 		}
 		if (!this.can('rangeban', targetUser)) {
 			this.errorReply(`Battlebans have been deprecated. Alternatives:`);
@@ -1743,4 +1743,38 @@ exports.commands = {
 	},
 	unmarksharedhelp: [`/unmarkshared [ip] - Unmarks a shared IP address. Requires @, &, ~`],
 
+	whitelist: 'whitelistUsername',
+	whitelistUsername(username) {
+		if (!username) return this.parse('/help whitelist');
+		if (!this.canTalk()) return;
+		if (!this.can('whitelist', username, null)) return false;
+		if (Whitelist.whitelist(username)) {
+			this.privateModAction(`${username} is now whitelisted.`);
+		} else {
+			this.privateModAction(`${username} was already whitelisted.`);
+		}
+	},
+	whitelisthelp: [`/whitelist [username] - Whitelists the user, granting access to the server.`],
+
+	unwhitelist: 'unWhitelistUsername',
+	unWhitelistUsername(username) {
+		if (!username) return this.parse('/help whitelist');
+		if (!this.canTalk()) return;
+		if (!this.can('unwhitelist', username, null)) return false;
+		if (Whitelist.unWhitelist(username)) {
+			this.privateModAction(`${username} was removed from whitelist.`);
+		} else {
+			this.privateModAction(`${username} wasn't whitelisted.`);
+		}
+	},
+	unwhitelisthelp: [`/unwhitelist [username] - Removes the specific username from the whitelist.`],
+
+	displaywhitelist: 'displayWhitelist',
+	displayWhitelist() {
+		if (!this.canTalk()) return;
+		if (!this.can('displaywhitelist')) return false;
+		this.privateModAction(Whitelist.visualizeWhitelist());
+		return true;
+	},
+	displaywhitelisthelp: [`/displaywhitelist - Displays a list of the whitelisted userIds.`],
 };
