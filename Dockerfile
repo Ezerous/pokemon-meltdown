@@ -1,5 +1,7 @@
 FROM node:12
 
+RUN apt-get update && apt-get install -y nano && apt-get clean
+
 # Create app directory
 WORKDIR /pokemon-meltdown
 
