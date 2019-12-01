@@ -5,6 +5,23 @@
 
 /**@type {(FormatsData | {section: string, column?: number})[]} */
 let Formats = [
+	// Custom
+	///////////////////////////////////////////////////////////////////
+
+	{
+		section: "Custom",
+	},
+	{
+		name: "[Gen 4] Non-Legendary",
+		desc: `Everything is acceptable except legendaries.`,
+
+		mod: 'gen4',
+		banlist: ['Articuno', 'Zapdos', 'Moltres', 'Mewtwo', 'Mew',
+			'Raikou', 'Entei', 'Suicune', 'Lugia', 'Ho-Oh', 'Celebi',
+			'Regirock', 'Regice', 'Registeel', 'Latias', 'Latios', 'Kyogre', 'Groudon', 'Rayquaza', 'Jirachi', 'Deoxys',
+			'Uxie', 'Mesprit', 'Azelf', 'Heatran', 'Regigigas', 'Cresselia', 'Dialga', 'Palkia', 'Giratina', 'Phione', 'Manaphy', 'Darkrai', 'Shaymin', 'Arceus',
+		],
+	},
 
 	// Sw/Sh Singles
 	///////////////////////////////////////////////////////////////////
