@@ -30,15 +30,6 @@ Changes
 
 This fork contains the following changes:
 
-### Whitelist
-
-The server can be configured to grant access only to those contained in the whitelist. To enable it, change the config option (in config/config.js) `whitelistEnabled` to true. After that, the administrators can add/remove/view user Ids to/from the whitelist by using the commands:
-+ `/whitelist [username]` - Whitelists the user, granting access to the server.
-+ `/unwhitelist [username]` - Removes the specific username from the whitelist.
-+ `/displaywhitelist` - Displays a list of the whitelisted userIds.
-
-*Note: Administrators are not affected by the whitelist.*
-
 ### Docker support
 
 Start a container with exposed port 8080 (which is binded to port XXXXX of the host):
@@ -50,6 +41,19 @@ Check that everything works with `docker ps` and then run `docker exec -it CONTA
 and configure it as desired (e.g. add an administrator, enable whitelist from config.js).
 
 Finally, apply a restart-always policy with `docker update --restart always CONTAINER_ID`.
+
+### Whitelist
+
+The server can be configured to grant access only to those contained in the whitelist. To enable it, change the config option (in config/config.js) `whitelistEnabled` to true. After that, the administrators can add/remove/view users to/from the whitelist by using the commands:
++ `/whitelist [username]` - Whitelists the user, granting access to the server.
++ `/unwhitelist [username]` - Removes the specific username from the whitelist.
++ `/displaywhitelist` - Displays a list of the whitelisted userIds.
+
+*Note: Administrators are not affected by the whitelist.*
+
+### Custom format
+
+A custom format was added ([Gen 4] Non-Legendary).
 
 
 Installing
