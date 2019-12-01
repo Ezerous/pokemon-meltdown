@@ -463,7 +463,10 @@ export class TeamValidator {
 				if (ability.name === template.abilities['H']) {
 					setSources.isHidden = true;
 
-					if (template.unreleasedHidden && ruleTable.has('-unreleased')) {
+					let unreleasedHidden = template.unreleasedHidden;
+					if (unreleasedHidden === 'Past' && minPastGen < dex.gen) unreleasedHidden = false;
+
+					if (unreleasedHidden && ruleTable.has('-unreleased')) {
 						problems.push(`${name}'s Hidden Ability is unreleased.`);
 					} else if (['entei', 'suicune', 'raikou'].includes(template.id) && minPastGen > 1) {
 						problems.push(`${name}'s Hidden Ability is only available from Virtual Console, which is not allowed in this format.`);
@@ -1204,11 +1207,16 @@ export class TeamValidator {
 			}
 			if (banReason === '') return null;
 		} else if (tierTemplate.isUnreleased) {
-			banReason = ruleTable.check('unreleased', setHas);
-			if (banReason) {
-				return `${tierTemplate.species} is unreleased.`;
+			let isUnreleased: boolean | 'Past' = tierTemplate.isUnreleased;
+			if (isUnreleased === 'Past' && (this.format.minSourceGen || 0) < dex.gen) isUnreleased = false;
+
+			if (isUnreleased) {
+				banReason = ruleTable.check('unreleased', setHas);
+				if (banReason) {
+					return `${tierTemplate.species} is unreleased.`;
+				}
+				if (banReason === '') return null;
 			}
-			if (banReason === '') return null;
 		}
 
 		return null;
@@ -1690,7 +1698,7 @@ export class TeamValidator {
 
 					if (learned.charAt(1) === 'L') {
 						// special checking for level-up moves
-						if (level >= parseInt(learned.substr(2), 10) || learnedGen >= 7) {
+						if (level >= parseInt(learned.substr(2), 10) || learnedGen === 7) {
 							// we're past the required level to learn it
 							// (gen 7 level-up moves can be relearnered at any level)
 							// falls through to LMT check below

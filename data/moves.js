@@ -283,8 +283,7 @@ let BattleMovedex = {
 			if (target.side.active.length < 2) return false; // fails in singles
 			let action = this.willMove(target);
 			if (action) {
-				this.cancelMove(target);
-				this.queue.unshift(action);
+				this.prioritizeAction(action);
 				this.add('-activate', target, 'move: After You');
 			} else {
 				return false;
@@ -3463,7 +3462,7 @@ let BattleMovedex = {
 		onHit(target, source, move) {
 			let success = false;
 			if (!target.volatiles['substitute'] || move.infiltrates) success = !!this.boost({evasion: -1});
-			let removeTarget = ['reflect', 'lightscreen', 'auroraveil', 'safeguard', 'mist', 'spikes', 'toxicspikes', 'stealthrock', 'stickyweb'];
+			let removeTarget = ['reflect', 'lightscreen', 'auroraveil', 'safeguard', 'mist', 'spikes', 'toxicspikes', 'stealthrock', 'stickyweb', 'gmaxsteelsurge'];
 			let removeAll = ['spikes', 'toxicspikes', 'stealthrock', 'stickyweb', 'gmaxsteelsurge'];
 			for (const targetCondition of removeTarget) {
 				if (target.side.removeSideCondition(targetCondition)) {
@@ -3478,6 +3477,7 @@ let BattleMovedex = {
 					success = true;
 				}
 			}
+			this.field.clearTerrain();
 			return success;
 		},
 		secondary: null,
@@ -6819,17 +6819,19 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Butterfree",
-		onHit(target, source) {
-			for (let pokemon of target.side.active) {
-				let result = this.random(3);
-				if (result === 0) {
-					pokemon.trySetStatus('slp', source);
-				} else if (result === 1) {
-					pokemon.trySetStatus('par', source);
-				} else {
-					pokemon.trySetStatus('psn', source);
+		self: {
+			onHit(source) {
+				for (let pokemon of source.side.foe.active) {
+					let result = this.random(3);
+					if (result === 0) {
+						pokemon.trySetStatus('slp', source);
+					} else if (result === 1) {
+						pokemon.trySetStatus('par', source);
+					} else {
+						pokemon.trySetStatus('psn', source);
+					}
 				}
-			}
+			},
 		},
 		target: "adjacentFoe",
 		type: "Bug",
@@ -6849,10 +6851,12 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Centiskorch",
-		onHit(target, source) {
-			for (let pokemon of target.side.active) {
-				pokemon.addVolatile('partiallytrapped');
-			}
+		self: {
+			onHit(source) {
+				for (let pokemon of source.side.foe.active) {
+					pokemon.addVolatile('partiallytrapped');
+				}
+			},
 		},
 		secondary: null,
 		target: "adjacentFoe",
@@ -6874,7 +6878,7 @@ let BattleMovedex = {
 		flags: {},
 		isMax: "Machamp",
 		self: {
-			onHit(target, source) {
+			onHit(source) {
 				for (let pokemon of source.side.active) {
 					pokemon.addVolatile('focusenergy');
 				}
@@ -6898,10 +6902,12 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Eevee",
-		onHit(target, source) {
-			for (let pokemon of target.side.active) {
-				pokemon.addVolatile('attract');
-			}
+		self: {
+			onHit(source) {
+				for (let pokemon of source.side.foe.active) {
+					pokemon.addVolatile('attract');
+				}
+			},
 		},
 		secondary: null,
 		target: "adjacentFoe",
@@ -6922,18 +6928,20 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Duraludon",
-		onAfterHit(target, source) {
-			for (let pokemon of target.side.active) {
-				const move = pokemon.lastMove;
-				if (move && !move.isZ && !move.isMax) {
-					let ppDeducted = pokemon.deductPP(move.id, 4);
-					if (ppDeducted) {
-						this.add("-activate", pokemon, 'move: Max Depletion', move.name, ppDeducted);
-						return;
+		self: {
+			onAfterHit(source) {
+				for (let pokemon of source.side.foe.active) {
+					const move = pokemon.lastMove;
+					if (move && !move.isZ && !move.isMax) {
+						let ppDeducted = pokemon.deductPP(move.id, 4);
+						if (ppDeducted) {
+							this.add("-activate", pokemon, 'move: Max Depletion', move.name, ppDeducted);
+							return;
+						}
 					}
+					return false;
 				}
-				return false;
-			}
+			},
 		},
 		secondary: null,
 		target: "adjacentFoe",
@@ -6954,7 +6962,7 @@ let BattleMovedex = {
 		flags: {},
 		isMax: "Alcremie",
 		self: {
-			onAfterHit(target, source) {
+			onAfterHit(source) {
 				for (let pokemon of source.side.active) {
 					this.heal(pokemon.maxhp / 6, pokemon, source);
 				}
@@ -6978,10 +6986,12 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Kingler",
-		onHit(target, source, move) {
-			for (let pokemon of target.side.active) {
-				this.boost({spe: -2}, pokemon, source, move);
-			}
+		self: {
+			onHit(source) {
+				for (let pokemon of source.side.foe.active) {
+					this.boost({spe: -2}, pokemon);
+				}
+			},
 		},
 		secondary: null,
 		target: "adjacentFoe",
@@ -7001,10 +7011,12 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Meowth",
-		onHit(target, source) {
-			for (let pokemon of target.side.active) {
-				pokemon.addVolatile('confusion');
-			}
+		self: {
+			onHit(source) {
+				for (let pokemon of source.side.foe.active) {
+					pokemon.addVolatile('confusion');
+				}
+			},
 		},
 		secondary: null,
 		target: "adjacentFoe",
@@ -7025,9 +7037,7 @@ let BattleMovedex = {
 		flags: {},
 		isMax: "Orbeetle",
 		self: {
-			onHit(target, source, move) {
-				this.field.addPseudoWeather('gravity');
-			},
+			pseudoWeather: 'gravity',
 		},
 		target: "adjacentFoe",
 		type: "Psychic",
@@ -7046,10 +7056,12 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Garbodor",
-		onHit(target, source) {
-			for (let pokemon of target.side.active) {
-				pokemon.trySetStatus('psn', source);
-			}
+		self: {
+			onHit(source) {
+				for (let pokemon of source.side.foe.active) {
+					pokemon.trySetStatus('psn', source);
+				}
+			},
 		},
 		target: "adjacentFoe",
 		type: "Poison",
@@ -7068,10 +7080,12 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Melmetal",
-		onHit(target, source) {
-			for (let pokemon of target.side.active) {
-				pokemon.addVolatile('torment');
-			}
+		self: {
+			onHit(source) {
+				for (let pokemon of source.side.foe.active) {
+					pokemon.addVolatile('torment');
+				}
+			},
 		},
 		secondary: null,
 		target: "adjacentFoe",
@@ -7092,8 +7106,8 @@ let BattleMovedex = {
 		flags: {},
 		isMax: "Snorlax",
 		self: {
-			onHit(target, source) {
-				for (let pokemon of target.side.active) {
+			onHit(source) {
+				for (let pokemon of source.side.active) {
 					if (!pokemon.item && pokemon.lastItem && this.dex.getItem(pokemon.lastItem).isBerry) {
 						let item = pokemon.lastItem;
 						pokemon.lastItem = '';
@@ -7122,9 +7136,7 @@ let BattleMovedex = {
 		flags: {},
 		isMax: "Lapras",
 		self: {
-			onHit(target, source, move) {
-				source.side.addSideCondition('auroraveil');
-			},
+			sideCondition: 'auroraveil',
 		},
 		secondary: null,
 		target: "adjacentFoe",
@@ -7144,10 +7156,14 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Sandaconda",
-		onHit(target, source) {
-			for (let pokemon of target.side.active) {
-				pokemon.addVolatile('partiallytrapped');
-			}
+		self: {
+			onHit(source) {
+				for (let pokemon of source.side.foe.active) {
+					if (!pokemon.volatiles['substitute']) {
+						pokemon.addVolatile('partiallytrapped', source, this.dex.getActiveMove('Sand Tomb'), 'trapper');
+					}
+				}
+			},
 		},
 		secondary: null,
 		target: "adjacentFoe",
@@ -7167,10 +7183,12 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Hatterene",
-		onHit(target, source, move) {
-			for (let pokemon of target.side.active) {
-				pokemon.addVolatile('confusion', source, move);
-			}
+		self: {
+			onHit(source) {
+				for (let pokemon of source.side.foe.active) {
+					pokemon.addVolatile('confusion', source);
+				}
+			},
 		},
 		secondary: null,
 		target: "adjacentFoe",
@@ -7190,12 +7208,14 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Grimmsnarl",
-		onHit(target, source) {
-			for (let pokemon of target.side.active) {
-				if (!target.status && target.runStatusImmunity('slp')) {
-					pokemon.addVolatile('yawn');
+		self: {
+			onHit(source) {
+				for (let pokemon of source.side.foe.active) {
+					if (!pokemon.status && pokemon.runStatusImmunity('slp')) {
+						pokemon.addVolatile('yawn');
+					}
 				}
-			}
+			},
 		},
 		secondary: null,
 		target: "adjacentFoe",
@@ -7215,8 +7235,10 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Copperajah",
-		onHit(target, source, move) {
-			target.side.addSideCondition('gmaxsteelsurge');
+		self: {
+			onHit(source) {
+				source.side.foe.addSideCondition('gmaxsteelsurge');
+			},
 		},
 		effect: {
 			onStart(side) {
@@ -7246,8 +7268,10 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Drednaw",
-		onHit(target, source, move) {
-			target.side.addSideCondition('stealthrock');
+		self: {
+			onHit(source) {
+				source.side.foe.addSideCondition('stealthrock');
+			},
 		},
 		secondary: null,
 		target: "adjacentFoe",
@@ -7267,15 +7291,17 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Toxtricity",
-		onHit(target, source) {
-			for (let pokemon of target.side.active) {
-				let result = this.random(2);
-				if (result === 0) {
-					pokemon.trySetStatus('par', source);
-				} else {
-					pokemon.trySetStatus('psn', source);
+		self: {
+			onHit(source) {
+				for (let pokemon of source.side.foe.active) {
+					let result = this.random(2);
+					if (result === 0) {
+						pokemon.trySetStatus('par', source);
+					} else {
+						pokemon.trySetStatus('psn', source);
+					}
 				}
-			}
+			},
 		},
 		secondary: null,
 		target: "adjacentFoe",
@@ -7295,18 +7321,18 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Appletun",
-		onHit(target, source, move) {
-			this.add('-activate', source, 'move: G-Max Sweetness');
-			let success = false;
-			for (const ally of source.side.pokemon) {
-				// TODO: test move's interaction with sap sipper and Substitute
-				if (ally !== source && ((ally.hasAbility('sapsipper')) ||
-						(ally.volatiles['substitute'] && !move.infiltrates))) {
-					continue;
+		self: {
+			onHit(source, pokemon, move) {
+				this.add('-activate', source, 'move: G-Max Sweetness');
+				for (const ally of source.side.pokemon) {
+					// TODO: test move's interaction with sap sipper and Substitute
+					if (ally !== source && ((ally.hasAbility('sapsipper')) ||
+							(ally.volatiles['substitute'] && !move.infiltrates))) {
+						continue;
+					}
+					ally.cureStatus();
 				}
-				if (ally.cureStatus()) success = true;
-			}
-			return success;
+			},
 		},
 		secondary: null,
 		target: "adjacentFoe",
@@ -7326,10 +7352,12 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Gengar",
-		onHit(target, source, move) {
-			for (const pokemon of target.side.active) {
-				pokemon.addVolatile('trapped', source, move, 'trapper');
-			}
+		self: {
+			onHit(source) {
+				for (const pokemon of source.side.foe.active) {
+					pokemon.addVolatile('trapped', source, null, 'trapper');
+				}
+			},
 		},
 		secondary: null,
 		target: "adjacentFoe",
@@ -7349,10 +7377,12 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Flapple",
-		onHit(target, source, move) {
-			for (const pokemon of target.side.active) {
-				this.boost({evasion: -1}, pokemon, source, move);
-			}
+		self: {
+			onHit(source) {
+				for (const pokemon of source.side.foe.active) {
+					this.boost({evasion: -1}, pokemon);
+				}
+			},
 		},
 		secondary: null,
 		target: "adjacentFoe",
@@ -7373,8 +7403,10 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Coalossal",
-		onHit(target, source, move) {
-			target.side.addSideCondition('gmaxvolcalith');
+		self: {
+			onHit(source) {
+				source.side.foe.addSideCondition('gmaxvolcalith');
+			},
 		},
 		effect: {
 			duration: 4,
@@ -7408,10 +7440,12 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Pikachu",
-		onHit(target, source, move) {
-			for (const pokemon of target.side.active) {
-				pokemon.trySetStatus('par', source, move);
-			}
+		self: {
+			onHit(source) {
+				for (const pokemon of source.side.foe.active) {
+					pokemon.trySetStatus('par', source);
+				}
+			},
 		},
 		secondary: null,
 		target: "adjacentFoe",
@@ -7423,7 +7457,7 @@ let BattleMovedex = {
 		accuracy: true,
 		basePower: 10,
 		category: "Physical",
-		desc: "Damages opponent(s) by 1/8 of their maximum HP for four turns. Base Power scales with the base move's Base Power.",
+		desc: "Damages non-Fire-type opponent(s) by 1/6 of their maximum HP for four turns. Base Power scales with the base move's Base Power.",
 		shortDesc: "Damages foes for 4 turns. BP scales w/ base move.",
 		id: "gmaxwildfire",
 		isNonstandard: "Custom",
@@ -7432,8 +7466,10 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Charizard",
-		onHit(target, source, move) {
-			target.side.addSideCondition('gmaxwildfire');
+		self: {
+			onHit(source) {
+				source.side.foe.addSideCondition('gmaxwildfire');
+			},
 		},
 		effect: {
 			duration: 4,
@@ -7442,7 +7478,7 @@ let BattleMovedex = {
 			},
 			onResidual(targetSide) {
 				for (const pokemon of targetSide.active) {
-					this.damage(pokemon.maxhp / 8, pokemon);
+					if (!pokemon.hasType('Fire')) this.damage(pokemon.maxhp / 6, pokemon);
 				}
 			},
 			onEnd(targetSide) {
@@ -7469,25 +7505,27 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: "Corviknight",
-		onHit(target, source, move) {
-			let success = false;
-			let removeTarget = ['reflect', 'lightscreen', 'auroraveil', 'safeguard', 'mist', 'spikes', 'toxicspikes', 'stealthrock', 'stickyweb'];
-			let removeAll = ['spikes', 'toxicspikes', 'stealthrock', 'stickyweb', 'gmaxsteelsurge'];
-			for (const targetCondition of removeTarget) {
-				if (target.side.removeSideCondition(targetCondition)) {
-					if (!removeAll.includes(targetCondition)) continue;
-					this.add('-sideend', target.side, this.dex.getEffect(targetCondition).name, '[from] move: Defog', '[of] ' + source);
-					success = true;
+		self: {
+			onHit(source) {
+				let success = false;
+				let removeTarget = ['reflect', 'lightscreen', 'auroraveil', 'safeguard', 'mist', 'spikes', 'toxicspikes', 'stealthrock', 'stickyweb'];
+				let removeAll = ['spikes', 'toxicspikes', 'stealthrock', 'stickyweb', 'gmaxsteelsurge'];
+				for (const targetCondition of removeTarget) {
+					if (source.side.foe.removeSideCondition(targetCondition)) {
+						if (!removeAll.includes(targetCondition)) continue;
+						this.add('-sideend', source.side.foe, this.dex.getEffect(targetCondition).name, '[from] move: G-Max Wind Rage', '[of] ' + source);
+						success = true;
+					}
 				}
-			}
-			for (const sideCondition of removeAll) {
-				if (source.side.removeSideCondition(sideCondition)) {
-					this.add('-sideend', source.side, this.dex.getEffect(sideCondition).name, '[from] move: Defog', '[of] ' + source);
-					success = true;
+				for (const sideCondition of removeAll) {
+					if (source.side.removeSideCondition(sideCondition)) {
+						this.add('-sideend', source.side, this.dex.getEffect(sideCondition).name, '[from] move: G-Max Wind Rage', '[of] ' + source);
+						success = true;
+					}
 				}
-			}
-			this.field.clearTerrain();
-			return success;
+				this.field.clearTerrain();
+				return success;
+			},
 		},
 		secondary: null,
 		target: "adjacentFoe",
@@ -10856,14 +10894,9 @@ let BattleMovedex = {
 		name: "Magic Powder",
 		pp: 20,
 		priority: 0,
-		flags: {protect: 1, reflectable: 1, mirror: 1, mystery: 1},
+		flags: {powder: 1, protect: 1, reflectable: 1, mirror: 1, mystery: 1},
 		onHit(target) {
-			if (target.getTypes().join() === 'Psychic' || !target.setType('Psychic')) {
-				// Soak should animate even when it fails.
-				// Returning false would suppress the animation.
-				this.add('-fail', target);
-				return null;
-			}
+			if (target.getTypes().join() === 'Psychic' || !target.setType('Psychic')) return false;
 			this.add('-start', target, 'typechange', 'Psychic');
 		},
 		secondary: null,
@@ -11184,10 +11217,10 @@ let BattleMovedex = {
 		flags: {},
 		isMax: true,
 		self: {
-			onHit(target, source, move) {
+			onHit(source) {
 				if (!source.volatiles['dynamax']) return;
 				for (let pokemon of source.side.active) {
-					this.boost({spe: 1}, pokemon, source, move);
+					this.boost({spe: 1}, pokemon);
 				}
 			},
 		},
@@ -11209,11 +11242,13 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: true,
-		onHit(target, source, move) {
-			if (!source.volatiles['dynamax']) return;
-			for (let pokemon of target.side.active) {
-				this.boost({spd: -1}, pokemon, source, move);
-			}
+		self: {
+			onHit(source) {
+				if (!source.volatiles['dynamax']) return;
+				for (let pokemon of source.side.foe.active) {
+					this.boost({spd: -1}, pokemon);
+				}
+			},
 		},
 		target: "adjacentFoe",
 		type: "Dark",
@@ -11234,7 +11269,7 @@ let BattleMovedex = {
 		flags: {},
 		isMax: true,
 		self: {
-			onHit(target, source, move) {
+			onHit(source) {
 				if (!source.volatiles['dynamax']) return;
 				this.field.setWeather('sunnyday');
 			},
@@ -11257,11 +11292,13 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: true,
-		onHit(target, source, move) {
-			if (!source.volatiles['dynamax']) return;
-			for (let pokemon of target.side.active) {
-				this.boost({spa: -1}, pokemon, source, move);
-			}
+		self: {
+			onHit(source) {
+				if (!source.volatiles['dynamax']) return;
+				for (let pokemon of source.side.foe.active) {
+					this.boost({spa: -1}, pokemon);
+				}
+			},
 		},
 		target: "adjacentFoe",
 		type: "Bug",
@@ -11282,7 +11319,7 @@ let BattleMovedex = {
 		flags: {},
 		isMax: true,
 		self: {
-			onHit(target, source, move) {
+			onHit(source) {
 				if (!source.volatiles['dynamax']) return;
 				this.field.setWeather('raindance');
 			},
@@ -11351,7 +11388,7 @@ let BattleMovedex = {
 		flags: {},
 		isMax: true,
 		self: {
-			onHit(target, source, move) {
+			onHit(source) {
 				if (!source.volatiles['dynamax']) return;
 				this.field.setWeather('hail');
 			},
@@ -11375,10 +11412,10 @@ let BattleMovedex = {
 		flags: {},
 		isMax: true,
 		self: {
-			onHit(target, source, move) {
+			onHit(source) {
 				if (!source.volatiles['dynamax']) return;
 				for (let pokemon of source.side.active) {
-					this.boost({atk: 1}, pokemon, source, move);
+					this.boost({atk: 1}, pokemon);
 				}
 			},
 		},
@@ -11401,7 +11438,7 @@ let BattleMovedex = {
 		flags: {},
 		isMax: true,
 		self: {
-			onHit(target, source, move) {
+			onHit(source) {
 				if (!source.volatiles['dynamax']) return;
 				this.field.setTerrain('electricterrain');
 			},
@@ -11425,7 +11462,7 @@ let BattleMovedex = {
 		flags: {},
 		isMax: true,
 		self: {
-			onHit(target, source, move) {
+			onHit(source) {
 				if (!source.volatiles['dynamax']) return;
 				this.field.setTerrain('psychicterrain');
 			},
@@ -11449,10 +11486,10 @@ let BattleMovedex = {
 		flags: {},
 		isMax: true,
 		self: {
-			onHit(target, source, move) {
+			onHit(source) {
 				if (!source.volatiles['dynamax']) return;
 				for (let pokemon of source.side.active) {
-					this.boost({spa: 1}, pokemon, source, move);
+					this.boost({spa: 1}, pokemon);
 				}
 			},
 		},
@@ -11475,7 +11512,7 @@ let BattleMovedex = {
 		flags: {},
 		isMax: true,
 		self: {
-			onHit(target, source, move) {
+			onHit(source) {
 				if (!source.volatiles['dynamax']) return;
 				this.field.setTerrain('grassyterrain');
 			},
@@ -11498,11 +11535,13 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: true,
-		onHit(target, source, move) {
-			if (!source.volatiles['dynamax']) return;
-			for (let pokemon of target.side.active) {
-				this.boost({def: -1}, pokemon, source, move);
-			}
+		self: {
+			onHit(source) {
+				if (!source.volatiles['dynamax']) return;
+				for (let pokemon of source.side.foe.active) {
+					this.boost({def: -1}, pokemon);
+				}
+			},
 		},
 		target: "adjacentFoe",
 		type: "Ghost",
@@ -11523,10 +11562,10 @@ let BattleMovedex = {
 		flags: {},
 		isMax: true,
 		self: {
-			onHit(target, source, move) {
+			onHit(source) {
 				if (!source.volatiles['dynamax']) return;
 				for (let pokemon of source.side.active) {
-					this.boost({spd: 1}, pokemon, source, move);
+					this.boost({spd: 1}, pokemon);
 				}
 			},
 		},
@@ -11549,7 +11588,7 @@ let BattleMovedex = {
 		flags: {},
 		isMax: true,
 		self: {
-			onHit(target, source, move) {
+			onHit(source) {
 				if (!source.volatiles['dynamax']) return;
 				this.field.setWeather('sandstorm');
 			},
@@ -11573,7 +11612,7 @@ let BattleMovedex = {
 		flags: {},
 		isMax: true,
 		self: {
-			onHit(target, source, move) {
+			onHit(source) {
 				if (!source.volatiles['dynamax']) return;
 				this.field.setTerrain('mistyterrain');
 			},
@@ -11597,10 +11636,10 @@ let BattleMovedex = {
 		flags: {},
 		isMax: true,
 		self: {
-			onHit(target, source, move) {
+			onHit(source) {
 				if (!source.volatiles['dynamax']) return;
 				for (let pokemon of source.side.active) {
-					this.boost({def: 1}, pokemon, source, move);
+					this.boost({def: 1}, pokemon);
 				}
 			},
 		},
@@ -11622,11 +11661,13 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: true,
-		onHit(target, source, move) {
-			if (!source.volatiles['dynamax']) return;
-			for (let pokemon of target.side.active) {
-				this.boost({spe: -1}, pokemon, source, move);
-			}
+		self: {
+			onHit(source) {
+				if (!source.volatiles['dynamax']) return;
+				for (let pokemon of source.side.foe.active) {
+					this.boost({spe: -1}, pokemon);
+				}
+			},
 		},
 		target: "adjacentFoe",
 		type: "Normal",
@@ -11646,11 +11687,13 @@ let BattleMovedex = {
 		priority: 0,
 		flags: {},
 		isMax: true,
-		onHit(target, source, move) {
-			if (!source.volatiles['dynamax']) return;
-			for (let pokemon of target.side.active) {
-				this.boost({atk: -1}, pokemon, source, move);
-			}
+		self: {
+			onHit(source) {
+				if (!source.volatiles['dynamax']) return;
+				for (let pokemon of source.side.foe.active) {
+					this.boost({atk: -1}, pokemon);
+				}
+			},
 		},
 		target: "adjacentFoe",
 		type: "Dragon",
@@ -17496,7 +17539,7 @@ let BattleMovedex = {
 		accuracy: 100,
 		basePower: 120,
 		category: "Special",
-		desc: "This attack charges on the first turn and executes on the second. Power is halved if the weather is Hail, Primordial Sea, Rain Dance, or Sandstorm. If the user is holding a Power Herb or the weather is Desolate Land or Sunny Day, the move completes in one turn.",
+		desc: "This attack charges on the first turn and executes on the second. Power is halved if the weather is Hail, Primordial Sea, Rain Dance, or Sandstorm and the user is not holding Utility Umbrella. If the user is holding a Power Herb or the weather is Desolate Land or Sunny Day, the move completes in one turn. If the user is holding Utility Umbrella and the weather is Desolate Land or Sunny Day, the move still requires a turn to charge.",
 		shortDesc: "Charges turn 1. Hits turn 2. No charge in sunlight.",
 		id: "solarbeam",
 		name: "Solar Beam",
@@ -17508,7 +17551,7 @@ let BattleMovedex = {
 				return;
 			}
 			this.add('-prepare', attacker, move.name, defender);
-			if (this.field.isWeather(['sunnyday', 'desolateland'])) {
+			if (this.field.isWeather(['sunnyday', 'desolateland']) && attacker.item !== "utilityumbrella") {
 				this.attrLastMove('[still]');
 				this.addMove('-anim', attacker, move.name, defender);
 				return;
@@ -17520,6 +17563,7 @@ let BattleMovedex = {
 			return null;
 		},
 		onBasePower(basePower, pokemon, target) {
+			if (pokemon.item === "utilityumbrella") return;
 			if (this.field.isWeather(['raindance', 'primordialsea', 'sandstorm', 'hail'])) {
 				this.debug('weakened by weather');
 				return this.chainModify(0.5);
@@ -17535,7 +17579,7 @@ let BattleMovedex = {
 		accuracy: 100,
 		basePower: 125,
 		category: "Physical",
-		desc: "This attack charges on the first turn and executes on the second. Power is halved if the weather is Hail, Primordial Sea, Rain Dance, or Sandstorm. If the user is holding a Power Herb or the weather is Desolate Land or Sunny Day, the move completes in one turn.",
+		desc: "This attack charges on the first turn and executes on the second. Power is halved if the weather is Hail, Primordial Sea, Rain Dance, or Sandstorm and the user is not holding Utility Umbrella. If the user is holding a Power Herb or the weather is Desolate Land or Sunny Day, the move completes in one turn. If the user is holding Utility Umbrella and the weather is Desolate Land or Sunny Day, the move still requires a turn to charge.",
 		shortDesc: "Charges turn 1. Hits turn 2. No charge in sunlight.",
 		id: "solarblade",
 		name: "Solar Blade",
@@ -17547,7 +17591,7 @@ let BattleMovedex = {
 				return;
 			}
 			this.add('-prepare', attacker, move.name, defender);
-			if (this.field.isWeather(['sunnyday', 'desolateland'])) {
+			if (this.field.isWeather(['sunnyday', 'desolateland']) && attacker.item !== "utilityumbrella") {
 				this.attrLastMove('[still]');
 				this.addMove('-anim', attacker, move.name, defender);
 				return;
@@ -17559,6 +17603,7 @@ let BattleMovedex = {
 			return null;
 		},
 		onBasePower(basePower, pokemon, target) {
+			if (pokemon.item === "utilityumbrella") return;
 			if (this.field.isWeather(['raindance', 'primordialsea', 'sandstorm', 'hail'])) {
 				this.debug('weakened by weather');
 				return this.chainModify(0.5);
@@ -20806,22 +20851,24 @@ let BattleMovedex = {
 		accuracy: 100,
 		basePower: 50,
 		category: "Special",
-		desc: "Power doubles if a weather condition other than Delta Stream is active, and this move's type changes to match. Ice type during Hail, Water type during Primordial Sea or Rain Dance, Rock type during Sandstorm, and Fire type during Desolate Land or Sunny Day.",
+		desc: "Power doubles if a weather condition other than Delta Stream is active, and this move's type changes to match. Ice type during Hail, Water type during Primordial Sea or Rain Dance, Rock type during Sandstorm, and Fire type during Desolate Land or Sunny Day. If the user is holding Utility Umbrella and uses Weather Ball during Primordial Sea, Rain Dance, Desolate Land, or Sunny Day, the move is still Normal-type and does not have a base power boost.",
 		shortDesc: "Power doubles and type varies in each weather.",
 		id: "weatherball",
 		name: "Weather Ball",
 		pp: 10,
 		priority: 0,
 		flags: {bullet: 1, protect: 1, mirror: 1},
-		onModifyMove(move) {
+		onModifyMove(move, pokemon) {
 			switch (this.field.effectiveWeather()) {
 			case 'sunnyday':
 			case 'desolateland':
+				if (pokemon.item === "utilityumbrella") break;
 				move.type = 'Fire';
 				move.basePower *= 2;
 				break;
 			case 'raindance':
 			case 'primordialsea':
+				if (pokemon.item === "utilityumbrella") break;
 				move.type = 'Water';
 				move.basePower *= 2;
 				break;

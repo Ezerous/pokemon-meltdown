@@ -558,8 +558,9 @@ const commands = {
 						"Dex#": pokemon.num,
 						"Gen": pokemon.gen || 'CAP',
 						"Height": pokemon.heightm + " m",
-						"Weight": pokemon.weighthg / 10 + " kg <em>(" + weighthit + " BP)</em>",
 					};
+					if (!pokemon.forme || pokemon.forme !== "Gmax") details["Weight"] = pokemon.weighthg / 10 + " kg <em>(" + weighthit + " BP)</em>";
+					else details["Weight"] = "0 kg <em>(GK/LK fail)</em>";
 					if (pokemon.color && dex.gen >= 5) details["Dex Colour"] = pokemon.color;
 					if (pokemon.eggGroups && dex.gen >= 2) details["Egg Group(s)"] = pokemon.eggGroups.join(", ");
 					let evos = /** @type {string[]} */ ([]);
@@ -658,7 +659,9 @@ const commands = {
 					if (move.flags['dance'] && dex.gen >= 7) details["&#10003; Dance move"] = "";
 
 					if (dex.gen >= 7) {
-						if (move.zMovePower) {
+						if (move.gen >= 8 && move.isMax) {
+							// Don't display Z-Power for Max/G-Max moves
+						} else if (move.zMovePower) {
 							details["Z-Power"] = move.zMovePower;
 						} else if (move.zMoveEffect) {
 							details["Z-Effect"] = {
