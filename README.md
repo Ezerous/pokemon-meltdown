@@ -39,6 +39,18 @@ The server can be configured to grant access only to those contained in the whit
 
 *Note: Administrators are not affected by the whitelist.*
 
+### Docker support
+
+Start a container with exposed port 8080 (which is binded to port XXXXX of the host):
+```
+docker build -t pokemon-meltdown .
+docker run -p XXXXX:8080 -d pokemon-meltdown
+```
+Check that everything works with `docker ps` and then run `docker exec -it CONTAINER_ID /bin/bash` to enter the container
+and configure it as desired (e.g. add an administrator, enable whitelist from config.js).
+
+Finally, apply a restart-always policy with `docker update --restart always CONTAINER_ID`.
+
 
 Installing
 ------------------------------------------------------------------------
